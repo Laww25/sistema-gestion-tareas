@@ -197,9 +197,3 @@ ec-microservicios-tareas/
 ```
 
 ---
-
-## 👥 Integrantes
-
-- [Tu nombre aquí]
-- [Nombre compañero 2]
-- [Nombre compañero 3]
