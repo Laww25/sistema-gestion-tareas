@@ -1,0 +1,328 @@
+openapi: 3.0.0
+info:
+  title: API - Sistema de Gestión de Tareas
+  description: Contrato de APIs para el sistema de gestión de tareas con microservicios
+  version: 1.0.0
+  contact:
+    name: Equipo de Desarrollo
+servers:
+  - url: http://localhost:8081
+    description: tasks-service
+  - url: http://localhost:8082
+    description: users-service
+  - url: http://localhost:8083
+    description: notifications-service
+
+tags:
+  - name: Tasks
+    description: Operaciones sobre tareas
+  - name: Users
+    description: Operaciones sobre usuarios
+  - name: Notifications
+    description: Operaciones sobre notificaciones
+
+paths:
+
+  # ─── TASKS SERVICE ────────────────────────────────────────────────
+  /tasks:
+    get:
+      tags: [Tasks]
+      summary: Listar todas las tareas
+      responses:
+        '200':
+          description: Lista de tareas obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Task'
+              example:
+                - id: 1
+                  title: "Diseñar base de datos"
+                  description: "Crear el modelo relacional"
+                  status: "PENDIENTE"
+                  userId: 1
+
+    post:
+      tags: [Tasks]
+      summary: Crear una nueva tarea
+      description: Crea una tarea y notifica automáticamente al notifications-service via Feign
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+            example:
+              title: "Nueva tarea"
+              description: "Descripción de la tarea"
+              status: "PENDIENTE"
+              userId: 1
+      responses:
+        '201':
+          description: Tarea creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '400':
+          description: Datos inválidos
+
+  /tasks/{id}:
+    put:
+      tags: [Tasks]
+      summary: Actualizar una tarea existente
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskRequest'
+            example:
+              title: "Tarea actualizada"
+              description: "Nueva descripción"
+              status: "EN_PROGRESO"
+              userId: 1
+      responses:
+        '200':
+          description: Tarea actualizada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Task'
+        '404':
+          description: Tarea no encontrada
+
+    delete:
+      tags: [Tasks]
+      summary: Eliminar una tarea
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Tarea eliminada exitosamente
+        '404':
+          description: Tarea no encontrada
+
+  # ─── USERS SERVICE ────────────────────────────────────────────────
+  /users:
+    get:
+      tags: [Users]
+      summary: Listar todos los usuarios
+      responses:
+        '200':
+          description: Lista de usuarios obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+              example:
+                - id: 1
+                  name: "Juan Pérez"
+                  email: "juan@gmail.com"
+
+    post:
+      tags: [Users]
+      summary: Crear un nuevo usuario
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+            example:
+              name: "Juan Pérez"
+              email: "juan@gmail.com"
+      responses:
+        '201':
+          description: Usuario creado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Datos inválidos
+
+  /users/{id}:
+    get:
+      tags: [Users]
+      summary: Obtener usuario por ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Usuario encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Usuario no encontrado
+
+    put:
+      tags: [Users]
+      summary: Actualizar un usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRequest'
+      responses:
+        '200':
+          description: Usuario actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Usuario no encontrado
+
+    delete:
+      tags: [Users]
+      summary: Eliminar un usuario
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Usuario eliminado exitosamente
+        '404':
+          description: Usuario no encontrado
+
+  # ─── NOTIFICATIONS SERVICE ────────────────────────────────────────
+  /notifications:
+    get:
+      tags: [Notifications]
+      summary: Listar todas las notificaciones
+      responses:
+        '200':
+          description: Lista de notificaciones obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Notification'
+              example:
+                - id: 1
+                  message: "Se creó la tarea: Diseñar base de datos"
+
+    post:
+      tags: [Notifications]
+      summary: Crear una notificación (llamado internamente por tasks-service via Feign)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+      responses:
+        '201':
+          description: Notificación creada exitosamente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+
+# ─── SCHEMAS ──────────────────────────────────────────────────────────
+components:
+  schemas:
+    Task:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        title:
+          type: string
+          example: "Diseñar base de datos"
+        description:
+          type: string
+          example: "Crear el modelo relacional del sistema"
+        status:
+          type: string
+          enum: [PENDIENTE, EN_PROGRESO, COMPLETADA]
+          example: "PENDIENTE"
+        userId:
+          type: integer
+          example: 1
+
+    TaskRequest:
+      type: object
+      required: [title, userId]
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [PENDIENTE, EN_PROGRESO, COMPLETADA]
+        userId:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "Juan Pérez"
+        email:
+          type: string
+          example: "juan@gmail.com"
+
+    UserRequest:
+      type: object
+      required: [name, email]
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+
+    Notification:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        message:
+          type: string
+          example: "Se creó la tarea: Diseñar base de datos"
+
+    NotificationRequest:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
